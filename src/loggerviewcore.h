@@ -31,7 +31,8 @@ struct LogMessageStruct
     QString text;
     LogType type;
 
-    QString filename;
+    QString functionstamp;
+    QString filestamp;
     QString timestamp;
 };
 

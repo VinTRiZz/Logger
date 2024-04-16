@@ -71,6 +71,8 @@ bool LoggerViewCore::parseFile()
         parseLine(dataBuffer);
     }
 
+    qDebug() << "Found" << d->m_currentSessionLog.messages.size() << "log messages";
+
     return true;
 }
 
@@ -120,16 +122,16 @@ std::shared_ptr<LogMessageStruct> LoggerViewCore::nextMessage()
 
 void LoggerViewCore::parseLine(const QString &lineData)
 {
-    if (!lineData.contains(QRegularExpression("\[[0-9]{2}.[0-9]{2}.[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\]"))) //  \[\(DEBUG\)|\(WARNING\)|\(INFO\)\]
+    if (!lineData.contains(QRegularExpression("\\[[0-9]{2}.[0-9]{2}.[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\\]")))
     {
-//        qDebug() << "Not contains needed data:" << lineData;
+//        qDebug() << "Skipping line:" << lineData;
         return;
     }
+//    qDebug() << "Parsing line:" << lineData;
 
     QRegularExpression dateExp("[0-9]{2}.[0-9]{2}.[0-9]{4}");
     QRegularExpression timeExp("[0-9]{2}:[0-9]{2}:[0-9]{2}");
 
-    qDebug() << "Contains data:" << lineData;
     if (lineData.contains("Launch time"))
     {
         auto match = dateExp.match(lineData);
@@ -140,11 +142,92 @@ void LoggerViewCore::parseLine(const QString &lineData)
         if (match.hasMatch())
             d->m_currentSessionLog.time = match.captured(0);
 
-        qDebug() << "Date and time parsed:" << d->m_currentSessionLog.date << d->m_currentSessionLog.time;
+//        qDebug() << "Found session:" << d->m_currentSessionLog.date << d->m_currentSessionLog.time;
         return;
     }
 
-    qDebug() << "Not a date or time";
+    std::shared_ptr<LogMessageStruct> currentLogMessage = std::shared_ptr<LogMessageStruct>(new LogMessageStruct(), std::default_delete<LogMessageStruct>());
+
+    QRegularExpression timestampMatch(QString("%1 %2").arg(dateExp.pattern(), timeExp.pattern()));
+    auto match = timestampMatch.match(lineData);
+    if (!match.hasMatch())
+        return;
+
+    currentLogMessage->timestamp = match.captured(0);
+//    qDebug() << "Timestamp:" << currentLogMessage->timestamp;
+
+    QRegularExpression filestampMatch("([\-\_\.A-Za-z0-9]+[/]{0,1}){1,} : [0-9]+");
+    match = filestampMatch.match(lineData);
+    if (!match.hasMatch())
+        return;
+
+    currentLogMessage->filestamp = match.captured(0);
+//    qDebug() << "File:" << currentLogMessage->filestamp;
+
+    QRegularExpression logTypeMatch("\\[(DEBUG|INFO|WARNING|CRITICAL|FATAL)\\]");
+    match = logTypeMatch.match(lineData);
+    if (!match.hasMatch())
+        return;
+
+    QString type = match.captured(0);
+    if (type.size() < 2)
+        return;
+
+    type.remove(0, 1);
+
+    switch (type[0].toLatin1())
+    {
+    case 'D':
+//        qDebug() << "Debug!";
+        currentLogMessage->type = LogType::LOG_TYPE_DEBUG;
+        break;
+
+    case 'I':
+//        qDebug() << "Info!";
+        currentLogMessage->type = LogType::LOG_TYPE_INFO;
+        break;
+
+    case 'W':
+//        qDebug() << "Warning!";
+        currentLogMessage->type = LogType::LOG_TYPE_WARNING;
+        break;
+
+    case 'C':
+//        qDebug() << "Critical!";
+        currentLogMessage->type = LogType::LOG_TYPE_CRITICAL;
+        break;
+
+    case 'F':
+//        qDebug() << "Fatal!";
+        currentLogMessage->type = LogType::LOG_TYPE_FATAL;
+        break;
+
+    default:
+        qDebug() << "Unknown log type:" << type;
+        return;
+    }
+
+    const QString wordRegExp("[:]{0,2}[A-Za-z0-9&*<>]+");
+    QRegularExpression functionMatch(QString("(%1 ){1,}(%1)+\\((%1(\\, %1){0,}){0,}\\)").arg(wordRegExp));
+    match = functionMatch.match(lineData);
+    if (!match.hasMatch())
+    {
+        qDebug() << "No function here:" << lineData;
+        return;
+    }
+
+    currentLogMessage->functionstamp = match.captured(0);
+//    qDebug() << "Function is:" << currentLogMessage->functionstamp;
+
+//    qDebug() << "Found log:"
+//             << currentLogMessage->timestamp
+//             << currentLogMessage->filestamp
+//             << currentLogMessage->functionstamp
+//             << "T:" << currentLogMessage->type
+//             << currentLogMessage->text
+//    ;
+
+    d->m_currentSessionLog.messages.push_back(currentLogMessage);
 }
 
 }

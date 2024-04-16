@@ -1,7 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+//#include "logger.h"
+
 #include <QMainWindow>
+
 
 #include "loggerviewcore.h"
 
