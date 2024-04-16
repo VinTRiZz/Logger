@@ -3,6 +3,8 @@
 #include <QFile>
 #include <QFileInfo>
 
+#include <QRegularExpression>
+
 #include <QDebug>
 
 namespace Logging
@@ -60,6 +62,15 @@ bool LoggerViewCore::parseFile()
 
     d->m_logFile.open(QIODevice::ReadOnly);
 
+    constexpr int64_t bufferSize = 1024 * 1024;
+    char dataBuffer[bufferSize];
+    memset(dataBuffer, '\0', bufferSize);
+
+    while (d->m_logFile.readLine(dataBuffer, bufferSize) > 0)
+    {
+        parseLine(dataBuffer);
+    }
+
     return true;
 }
 
@@ -105,6 +116,35 @@ std::shared_ptr<LogMessageStruct> LoggerViewCore::nextMessage()
 
     d->m_currentMessageIndex++;
     return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
+}
+
+void LoggerViewCore::parseLine(const QString &lineData)
+{
+    if (!lineData.contains(QRegularExpression("\[[0-9]{2}.[0-9]{2}.[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\]"))) //  \[\(DEBUG\)|\(WARNING\)|\(INFO\)\]
+    {
+//        qDebug() << "Not contains needed data:" << lineData;
+        return;
+    }
+
+    QRegularExpression dateExp("[0-9]{2}.[0-9]{2}.[0-9]{4}");
+    QRegularExpression timeExp("[0-9]{2}:[0-9]{2}:[0-9]{2}");
+
+    qDebug() << "Contains data:" << lineData;
+    if (lineData.contains("Launch time"))
+    {
+        auto match = dateExp.match(lineData);
+        if (match.hasMatch())
+            d->m_currentSessionLog.date = match.captured(0);
+
+        match = timeExp.match(lineData);
+        if (match.hasMatch())
+            d->m_currentSessionLog.time = match.captured(0);
+
+        qDebug() << "Date and time parsed:" << d->m_currentSessionLog.date << d->m_currentSessionLog.time;
+        return;
+    }
+
+    qDebug() << "Not a date or time";
 }
 
 }

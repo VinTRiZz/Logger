@@ -70,6 +70,8 @@ public:
 private:
     struct LoggerViewCorePrivate;
     std::unique_ptr<LoggerViewCorePrivate> d;
+
+    void parseLine(const QString& lineData);
 };
 
 }
