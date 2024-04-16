@@ -3,7 +3,7 @@
 
 #include <QDebug>
 
-#define log(what) ui->status_label->setText(what);
+#define log(what) showStatus(what)
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -13,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     ui->logs_tableView->setModel(m_pLoglistModel);
+
+    m_loggerCore.setLogChannel([this](const QString& msg){ showStatus(msg); });
 
     setupSignals();
 }
@@ -47,7 +49,20 @@ void MainWindow::processFile()
 
 void MainWindow::acceptViewChanges()
 {
-    qDebug() << "Updated logs view";
+    m_logTypeFilter.clear();
+
+    if (!ui->showDebug_checkBox->isChecked())    m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_DEBUG);
+    if (!ui->showInfo_checkBox->isChecked())     m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_INFO);
+    if (!ui->showWarning_checkBox->isChecked())  m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_WARNING);
+    if (!ui->showCritical_checkBox->isChecked()) m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_CRITICAL);
+    if (!ui->showFatal_checkBox->isChecked())    m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_FATAL);
+
+    if (!ui->showCout_checkBox->isChecked())     m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_STDOUT);
+    if (!ui->showCerr_checkBox->isChecked())     m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_STDERR);
+
+    if (!ui->showUnknown_checkBox->isChecked())  m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_UNKNOWN);
+
+    fillMessageList();
 }
 
 void MainWindow::updateLogTableContents()
@@ -86,13 +101,21 @@ void MainWindow::setupSignals()
     connect(ui->sessions_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::updateLogTableContents);
 }
 
+void MainWindow::showStatus(const QString &statusText)
+{
+    ui->status_label->setText(statusText);
+}
+
 void MainWindow::fillSessionList()
 {
     m_pLoglistModel->clear();
     ui->sessions_comboBox->clear();
 
     if (m_loggerCore.logDateCount() < 1)
+    {
+        log("No sessions found in a file");
         return;
+    }
 
     const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
     ui->sessions_comboBox->addItem(itemText);
@@ -102,6 +125,7 @@ void MainWindow::fillSessionList()
         const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
         ui->sessions_comboBox->addItem(itemText);
     }
+    log("Sessions loaded");
 }
 
 void MainWindow::fillMessageList()
@@ -123,8 +147,13 @@ void MainWindow::fillMessageList()
     if (!currentMessage.use_count())
         return;
 
+    while (m_loggerCore.setPrevMessage()); // Reset to first one
+
     while (m_loggerCore.setNextMessage())
     {
+        if (m_logTypeFilter.contains(currentMessage->type)) // Skip anything in filter
+            continue;
+
         columns.clear();
 
         columns.push_back(new QStandardItem(currentMessage->timestamp));
@@ -140,4 +169,8 @@ void MainWindow::fillMessageList()
     ui->logs_tableView->resizeColumnsToContents();
     auto header = ui->logs_tableView->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::Stretch);
+
+    ui->logs_tableView->update();
+
+    log("Logs loaded");
 }

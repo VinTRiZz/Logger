@@ -9,6 +9,8 @@
 
 #include "loggerviewcore.h"
 
+#include <QVector>
+
 namespace Ui {
 class MainWindow;
 }
@@ -33,9 +35,13 @@ private:
 
     Logging::LoggerViewCore m_loggerCore;
 
+    QVector<Logging::LogType> m_logTypeFilter;
+
     QStandardItemModel * m_pLoglistModel;
 
     void setupSignals();
+
+    void showStatus(const QString& statusText);
 
     void fillSessionList();
     void fillMessageList();

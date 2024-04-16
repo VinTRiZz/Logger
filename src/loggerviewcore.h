@@ -6,6 +6,8 @@
 #include <QString>
 #include <QVector>
 
+#include <functional>
+
 namespace Logging
 {
 
@@ -46,6 +48,8 @@ public:
     LoggerViewCore();
     ~LoggerViewCore();
 
+    void setLogChannel(std::function<void(const QString&)> logger);
+
     // Setup log file name or get it
     void setLogFile(const QString& filename);
     QString logFileName() const;
@@ -77,6 +81,8 @@ private:
     std::unique_ptr<LoggerViewCorePrivate> d;
 
     void parseLine(const QString& lineData);
+
+    std::function<void(const QString&)> m_logger;
 };
 
 }

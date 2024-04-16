@@ -7,6 +7,14 @@
 
 #include <QDebug>
 
+#define LOGGER_CORE_LOG(what) \
+{ \
+    if (m_logger) \
+        { m_logger(what); } \
+    else \
+        { qDebug() << what; } \
+}
+
 namespace Logging
 {
 
@@ -42,6 +50,11 @@ LoggerViewCore::~LoggerViewCore()
 
 }
 
+void LoggerViewCore::setLogChannel(std::function<void (const QString &)> logger)
+{
+    m_logger = logger;
+}
+
 void LoggerViewCore::setLogFile(const QString &filename)
 {
     if (d->m_logFile.isOpen())
@@ -59,7 +72,7 @@ bool LoggerViewCore::parseFile()
 {
     if (!d->m_logFile.exists() || QFileInfo(d->m_logFile.fileName()).isDir())
     {
-        qDebug() << "Invalid filename:" << d->m_logFile.fileName();
+        LOGGER_CORE_LOG(QString("Invalid filename: ") + d->m_logFile.fileName());
         return false;
     }
 
@@ -81,7 +94,7 @@ bool LoggerViewCore::parseFile()
     if (d->m_sessions.size())
         d->m_currentSessionLog = d->m_sessions[0];
 
-    qDebug() << "Parsed" << d->m_sessions.size() << "session(s)";
+    LOGGER_CORE_LOG(QString("Parsed ") + QString::number(d->m_sessions.size()) + " session(s)");
 
     return true;
 }
@@ -169,10 +182,10 @@ void LoggerViewCore::parseLine(const QString &lineData)
 {
     if (!lineData.contains(QRegularExpression("\\[[0-9]{2}.[0-9]{2}.[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\\]")))
     {
-//        qDebug() << "Skipping line:" << lineData;
+//        LOGGER_CORE_LOG(QString("Skipping line: ") + lineData);
         return;
     }
-//    qDebug() << "Parsing line:" << lineData;
+//    LOGGER_CORE_LOG(QString("Parsing line: ") + lineData);
 
     QRegularExpression dateExp("[0-9]{2}.[0-9]{2}.[0-9]{4}");
     QRegularExpression timeExp("[0-9]{2}:[0-9]{2}:[0-9]{2}");
@@ -190,7 +203,7 @@ void LoggerViewCore::parseLine(const QString &lineData)
         if (match.hasMatch())
             d->m_currentSessionLog->time = match.captured(0);
 
-//        qDebug() << "Found session:" << d->m_currentSessionLog->time << d->m_currentSessionLog->date;
+//        LOGGER_CORE_LOG(QString("Found session: ") + d->m_currentSessionLog->time + d->m_currentSessionLog->date);
         return;
     }
 
@@ -202,7 +215,7 @@ void LoggerViewCore::parseLine(const QString &lineData)
         return;
 
     currentLogMessage->timestamp = match.captured(0);
-//    qDebug() << "Timestamp:" << currentLogMessage->timestamp;
+//    LOGGER_CORE_LOG(QString("Timestamp: ") + currentLogMessage->timestamp);
 
     QRegularExpression filestampMatch("([\\-\\_\\.A-Za-z0-9]+[/]{0,1}){1,} : [0-9]+");
     match = filestampMatch.match(lineData);
@@ -210,7 +223,7 @@ void LoggerViewCore::parseLine(const QString &lineData)
         return;
 
     currentLogMessage->filestamp = match.captured(0);
-//    qDebug() << "File:" << currentLogMessage->filestamp;
+//    LOGGER_CORE_LOG(QString("File: ") + currentLogMessage->filestamp);
 
     QRegularExpression logTypeMatch("\\[(DEBUG|INFO|WARNING|CRITICAL|FATAL)\\]");
     match = logTypeMatch.match(lineData);
@@ -237,19 +250,19 @@ void LoggerViewCore::parseLine(const QString &lineData)
     match = functionMatch.match(lineData);
     if (!match.hasMatch())
     {
-        qDebug() << "No function here:" << lineData;
+        LOGGER_CORE_LOG(QString("No function here:") + lineData);
         return;
     }
 
     currentLogMessage->functionstamp = match.captured(0);
-//    qDebug() << "Function is:" << currentLogMessage->functionstamp;
+//    LOGGER_CORE_LOG(QString("Function is: ") + currentLogMessage->functionstamp);
 
-//    qDebug() << "Found log:"
-//             << currentLogMessage->timestamp
-//             << currentLogMessage->filestamp
-//             << currentLogMessage->functionstamp
-//             << "T:" << currentLogMessage->type
-//             << currentLogMessage->text
+//    LOGGER_CORE_LOG(QString("Found log:") +
+//             + currentLogMessage->timestamp + " "
+//             + currentLogMessage->filestamp + " "
+//             + currentLogMessage->functionstamp + " "
+//             + " T:" + QString::number(currentLogMessage->type) + " "
+//             + currentLogMessage->text)
 //    ;
 
     d->m_currentSessionLog->messages.push_back(currentLogMessage);
@@ -260,42 +273,29 @@ QString LogMessageStruct::typeString(LogType t)
     switch (t)
     {
     case LogType::LOG_TYPE_DEBUG:
-//        qDebug() << "Debug!";
         return "DEBUG";
         break;
 
     case LogType::LOG_TYPE_INFO:
-//        qDebug() << "Info!";
         return "INFO";
-        break;
 
     case LogType::LOG_TYPE_WARNING:
-//        qDebug() << "Warning!";
         return "WARNING";
-        break;
 
     case LogType::LOG_TYPE_CRITICAL:
-//        qDebug() << "Critical!";
         return "CRITICAL";
-        break;
 
     case LogType::LOG_TYPE_FATAL:
-//        qDebug() << "Fatal!";
         return "FATAL";
-        break;
 
     case LogType::LOG_TYPE_STDOUT:
-//        qDebug() << "STD out!";
         return "STDOUT";
-        break;
 
     case LogType::LOG_TYPE_STDERR:
-//        qDebug() << "STD err!";
+//        LOGGER_CORE_LOG(QString("STD err!");
         return "STDERR";
-        break;
 
     default:
-        qDebug() << "Unknown log type:" << t;
         return "UNKNOWN";
     }
 }
@@ -305,32 +305,26 @@ LogType LogMessageStruct::typeFromString(const QString &t)
     switch (t[0].toLatin1())
     {
     case 'D':
-//        qDebug() << "Debug!";
         return LogType::LOG_TYPE_DEBUG;
         break;
 
     case 'I':
-//        qDebug() << "Info!";
         return LogType::LOG_TYPE_INFO;
         break;
 
     case 'W':
-//        qDebug() << "Warning!";
         return LogType::LOG_TYPE_WARNING;
         break;
 
     case 'C':
-//        qDebug() << "Critical!";
         return LogType::LOG_TYPE_CRITICAL;
         break;
 
     case 'F':
-//        qDebug() << "Fatal!";
         return LogType::LOG_TYPE_FATAL;
         break;
 
     default:
-        qDebug() << "Unknown log type:" << t;
         return LogType::LOG_TYPE_UNKNOWN;
     }
 }
