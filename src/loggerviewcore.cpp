@@ -208,7 +208,8 @@ void LoggerViewCore::parseLine(const QString &lineData)
     }
 
     const QString wordRegExp("[:]{0,2}[A-Za-z0-9&*<>]+");
-    QRegularExpression functionMatch(QString("(%1 ){1,}(%1)+\\((%1(\\, %1){0,}){0,}\\)").arg(wordRegExp));
+    const QString argRegExp = QString("(%1){1,}( %1){0,}(\\, ){0,1}").arg(wordRegExp);
+    QRegularExpression functionMatch(QString("(%1 ){1,}(%1)+\\((%2){0,}\\)").arg(wordRegExp, argRegExp));
     match = functionMatch.match(lineData);
     if (!match.hasMatch())
     {
