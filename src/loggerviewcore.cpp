@@ -21,7 +21,10 @@ struct SessionLogStruct
 
 struct LoggerViewCore::LoggerViewCorePrivate
 {
-    SessionLogStruct m_currentSessionLog;
+    std::vector<std::shared_ptr<SessionLogStruct>> m_sessions;
+    size_t m_currentSessionIndex {0};
+
+    std::shared_ptr<SessionLogStruct> m_currentSessionLog;
     size_t m_currentMessageIndex {0};
 
     QFile m_logFile;
@@ -71,7 +74,10 @@ bool LoggerViewCore::parseFile()
         parseLine(dataBuffer);
     }
 
-    qDebug() << "Found" << d->m_currentSessionLog.messages.size() << "log messages";
+    if (d->m_sessions.size())
+        d->m_currentSessionLog = d->m_sessions[0];
+
+    qDebug() << "Parsed" << d->m_sessions.size() << "session(s)";
 
     return true;
 }
@@ -82,14 +88,49 @@ bool LoggerViewCore::parseFile(const QString &filename)
     return this->parseFile();
 }
 
-QString LoggerViewCore::date()
+QString LoggerViewCore::date() const
 {
-    return d->m_currentSessionLog.date;
+    return d->m_currentSessionLog->date;
+}
+
+QString LoggerViewCore::time() const
+{
+    return d->m_currentSessionLog->time;
+}
+
+bool LoggerViewCore::setPrevDate()
+{
+    if (!d->m_sessions.size())
+        return false;
+
+    if (d->m_currentSessionIndex == 0)
+        return false;
+
+    d->m_currentMessageIndex = 0;
+    d->m_currentSessionIndex--;
+    d->m_currentSessionLog = d->m_sessions[d->m_currentSessionIndex];
+    return true;
+}
+
+bool LoggerViewCore::setNextDate()
+{
+    if (d->m_sessions.size() <= (d->m_currentSessionIndex + 1))
+        return false;
+
+    d->m_currentMessageIndex = 0;
+    d->m_currentSessionIndex++;
+    d->m_currentSessionLog = d->m_sessions[d->m_currentSessionIndex];
+    return true;
+}
+
+size_t LoggerViewCore::logDateCount() const
+{
+    return d->m_sessions.size();
 }
 
 size_t LoggerViewCore::messageCount() const
 {
-    return d->m_currentSessionLog.messages.size();
+    return d->m_currentSessionLog->messages.size();
 }
 
 size_t LoggerViewCore::currentMessageIndex() const
@@ -97,27 +138,27 @@ size_t LoggerViewCore::currentMessageIndex() const
     return d->m_currentMessageIndex;
 }
 
-std::shared_ptr<LogMessageStruct> LoggerViewCore::prevMessage()
+bool LoggerViewCore::setPrevMessage()
 {
     if (d->m_currentMessageIndex == 0)
         return {};
 
     d->m_currentMessageIndex--;
-    return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
+    return true;
 }
 
 std::shared_ptr<LogMessageStruct> LoggerViewCore::message()
 {
-    return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
+    return d->m_currentSessionLog->messages[d->m_currentMessageIndex];
 }
 
-std::shared_ptr<LogMessageStruct> LoggerViewCore::nextMessage()
+bool LoggerViewCore::setNextMessage()
 {
-    if (d->m_currentMessageIndex >= d->m_currentSessionLog.messages.size())
+    if (d->m_currentMessageIndex >= d->m_currentSessionLog->messages.size())
         return {};
 
     d->m_currentMessageIndex++;
-    return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
+    return true;
 }
 
 void LoggerViewCore::parseLine(const QString &lineData)
@@ -134,15 +175,18 @@ void LoggerViewCore::parseLine(const QString &lineData)
 
     if (lineData.contains("Launch time"))
     {
+        d->m_currentSessionLog = std::shared_ptr<SessionLogStruct>(new SessionLogStruct(), std::default_delete<SessionLogStruct>());
+        d->m_sessions.push_back(d->m_currentSessionLog);
+
         auto match = dateExp.match(lineData);
         if (match.hasMatch())
-            d->m_currentSessionLog.date = match.captured(0);
+            d->m_currentSessionLog->date = match.captured(0);
 
         match = timeExp.match(lineData);
         if (match.hasMatch())
-            d->m_currentSessionLog.time = match.captured(0);
+            d->m_currentSessionLog->time = match.captured(0);
 
-//        qDebug() << "Found session:" << d->m_currentSessionLog.date << d->m_currentSessionLog.time;
+//        qDebug() << "Found session:" << d->m_currentSessionLog->time << d->m_currentSessionLog->date;
         return;
     }
 
@@ -174,38 +218,7 @@ void LoggerViewCore::parseLine(const QString &lineData)
         return;
 
     type.remove(0, 1);
-
-    switch (type[0].toLatin1())
-    {
-    case 'D':
-//        qDebug() << "Debug!";
-        currentLogMessage->type = LogType::LOG_TYPE_DEBUG;
-        break;
-
-    case 'I':
-//        qDebug() << "Info!";
-        currentLogMessage->type = LogType::LOG_TYPE_INFO;
-        break;
-
-    case 'W':
-//        qDebug() << "Warning!";
-        currentLogMessage->type = LogType::LOG_TYPE_WARNING;
-        break;
-
-    case 'C':
-//        qDebug() << "Critical!";
-        currentLogMessage->type = LogType::LOG_TYPE_CRITICAL;
-        break;
-
-    case 'F':
-//        qDebug() << "Fatal!";
-        currentLogMessage->type = LogType::LOG_TYPE_FATAL;
-        break;
-
-    default:
-        qDebug() << "Unknown log type:" << type;
-        return;
-    }
+    currentLogMessage->type = LogMessageStruct::typeFromString(type);
 
     const QString wordRegExp("[:]{0,2}[A-Za-z0-9&*<>]+");
     const QString argRegExp = QString("(%1){1,}( %1){0,}(\\, ){0,1}").arg(wordRegExp);
@@ -228,7 +241,77 @@ void LoggerViewCore::parseLine(const QString &lineData)
 //             << currentLogMessage->text
 //    ;
 
-    d->m_currentSessionLog.messages.push_back(currentLogMessage);
+    d->m_currentSessionLog->messages.push_back(currentLogMessage);
+}
+
+QString LogMessageStruct::typeString(LogType t)
+{
+    switch (t)
+    {
+    case LogType::LOG_TYPE_DEBUG:
+//        qDebug() << "Debug!";
+        return "DEBUG";
+        break;
+
+    case LogType::LOG_TYPE_INFO:
+//        qDebug() << "Info!";
+        return "INFO";
+        break;
+
+    case LogType::LOG_TYPE_WARNING:
+//        qDebug() << "Warning!";
+        return "WARNING";
+        break;
+
+    case LogType::LOG_TYPE_CRITICAL:
+//        qDebug() << "Critical!";
+        return "CRITICAL";
+        break;
+
+    case LogType::LOG_TYPE_FATAL:
+//        qDebug() << "Fatal!";
+        return "FATAL";
+        break;
+
+    default:
+        qDebug() << "Unknown log type:" << t;
+        return "UNKNOWN";
+    }
+}
+
+LogType LogMessageStruct::typeFromString(const QString &t)
+{
+    switch (t[0].toLatin1())
+    {
+    case 'D':
+//        qDebug() << "Debug!";
+        return LogType::LOG_TYPE_DEBUG;
+        break;
+
+    case 'I':
+//        qDebug() << "Info!";
+        return LogType::LOG_TYPE_INFO;
+        break;
+
+    case 'W':
+//        qDebug() << "Warning!";
+        return LogType::LOG_TYPE_WARNING;
+        break;
+
+    case 'C':
+//        qDebug() << "Critical!";
+        return LogType::LOG_TYPE_CRITICAL;
+        break;
+
+    case 'F':
+//        qDebug() << "Fatal!";
+        return LogType::LOG_TYPE_FATAL;
+        break;
+
+    default:
+        qDebug() << "Unknown log type:" << t;
+        return LogType::LOG_TYPE_UNKNOWN;
+    }
 }
 
 }

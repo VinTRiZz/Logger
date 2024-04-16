@@ -7,9 +7,12 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
+    m_pLoglistModel {new QStandardItemModel(this)},
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    ui->logs_tableView->setModel(m_pLoglistModel);
 
     setupSignals();
 }
@@ -30,14 +33,47 @@ void MainWindow::processFile()
         return;
     }
 
-    if (m_loggerCore.parseFile(filename))
-    {
-        qDebug() << "Parsing complete";
-        log("Parsing complete");
-    }
-    else
+    if (!m_loggerCore.parseFile(filename))
     {
         log("File invalid or not exist");
+        return;
+    }
+
+    qDebug() << "Parsing complete";
+    log("Parsing complete");
+
+    fillSessionList();
+}
+
+void MainWindow::acceptViewChanges()
+{
+    qDebug() << "Updated logs view";
+}
+
+void MainWindow::updateLogTableContents()
+{
+    const QString choosenDate = ui->sessions_comboBox->currentText();
+    QString dateText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
+    while (m_loggerCore.setNextDate())
+    {
+        dateText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
+
+        if (dateText == choosenDate)
+        {
+            fillMessageList();
+            return;
+        }
+    }
+
+    while (m_loggerCore.setPrevDate())
+    {
+        dateText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
+
+        if (dateText == choosenDate)
+        {
+            fillMessageList();
+            return;
+        }
     }
 }
 
@@ -45,4 +81,56 @@ void MainWindow::setupSignals()
 {
     connect(ui->chooseLogFile_pushButton, &QPushButton::clicked, this, &MainWindow::processFile);
     connect(ui->logFileName_lineEdit, &QLineEdit::returnPressed, this, &MainWindow::processFile);
+
+    connect(ui->acceptShowSettings_pushButton, &QPushButton::clicked, this, &MainWindow::acceptViewChanges);
+    connect(ui->sessions_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::updateLogTableContents);
+}
+
+void MainWindow::fillSessionList()
+{
+    if (m_loggerCore.logDateCount() < 1)
+        return;
+
+    const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
+    ui->sessions_comboBox->addItem(itemText);
+
+    while (m_loggerCore.setNextDate())
+    {
+        const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
+        ui->sessions_comboBox->addItem(itemText);
+    }
+}
+
+void MainWindow::fillMessageList()
+{
+    m_pLoglistModel->clear();
+
+    // Setup header
+    QStandardItem* logRow = new QStandardItem("Test");
+    QList<QStandardItem*> columns;
+    columns.push_back(new QStandardItem("Timestamp"));
+    columns.push_back(new QStandardItem("Log type"));
+    columns.push_back(new QStandardItem("File"));
+    columns.push_back(new QStandardItem("Function"));
+    columns.push_back(new QStandardItem("Text"));
+
+    m_pLoglistModel->appendRow(columns);
+
+    auto currentMessage = m_loggerCore.message();
+    if (!currentMessage.use_count())
+        return;
+
+    while (m_loggerCore.setNextMessage())
+    {
+        columns.clear();
+
+        columns.push_back(new QStandardItem(currentMessage->timestamp));
+        columns.push_back(new QStandardItem(Logging::LogMessageStruct::typeString(currentMessage->type)));
+        columns.push_back(new QStandardItem(currentMessage->filestamp));
+        columns.push_back(new QStandardItem(currentMessage->functionstamp));
+        columns.push_back(new QStandardItem(currentMessage->text));
+        m_pLoglistModel->appendRow(columns);
+
+        currentMessage = m_loggerCore.message();
+    }
 }

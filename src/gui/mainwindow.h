@@ -5,6 +5,7 @@
 
 #include <QMainWindow>
 
+#include <QStandardItemModel>
 
 #include "loggerviewcore.h"
 
@@ -23,12 +24,21 @@ public:
 public slots:
     void processFile();
 
+    void acceptViewChanges();
+
+    void updateLogTableContents();
+
 private:
     Ui::MainWindow *ui;
 
     Logging::LoggerViewCore m_loggerCore;
 
+    QStandardItemModel * m_pLoglistModel;
+
     void setupSignals();
+
+    void fillSessionList();
+    void fillMessageList();
 };
 
 #endif // MAINWINDOW_H

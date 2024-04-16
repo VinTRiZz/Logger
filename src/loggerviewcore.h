@@ -34,6 +34,9 @@ struct LogMessageStruct
     QString functionstamp;
     QString filestamp;
     QString timestamp;
+
+    static QString typeString(LogType t);
+    static LogType typeFromString(const QString& t);
 };
 
 
@@ -52,21 +55,22 @@ public:
     bool parseFile(const QString& filename);
 
     // Date and time program started in current log period
-    QString date();
-    QString time();
+    QString date() const;
+    QString time() const;
 
     // Switch between program launches
-    bool prevDate();
-    bool nextDate();
+    bool setPrevDate();
+    bool setNextDate();
+    size_t logDateCount() const;
 
-    // Count of messages parsed
+    // Message index work
     size_t messageCount() const;
     size_t currentMessageIndex() const;
 
     // Iterate between messages. Unsafe (take care of indexes)
-    std::shared_ptr<LogMessageStruct> prevMessage();    // Get past and index -1
+    bool setPrevMessage();    // Get past and index -1
     std::shared_ptr<LogMessageStruct> message();        // Current
-    std::shared_ptr<LogMessageStruct> nextMessage();    // Get next and index +1
+    bool setNextMessage();    // Get next and index +1
 
 private:
     struct LoggerViewCorePrivate;
