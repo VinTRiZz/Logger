@@ -88,6 +88,9 @@ void MainWindow::setupSignals()
 
 void MainWindow::fillSessionList()
 {
+    m_pLoglistModel->clear();
+    ui->sessions_comboBox->clear();
+
     if (m_loggerCore.logDateCount() < 1)
         return;
 

@@ -121,12 +121,18 @@
               <property name="text">
                <string>Info</string>
               </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QCheckBox" name="showWarning_checkBox">
               <property name="text">
                <string>Warning</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -135,12 +141,18 @@
               <property name="text">
                <string>Critical</string>
               </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QCheckBox" name="showFatal_checkBox">
               <property name="text">
                <string>Fatal</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -149,12 +161,18 @@
               <property name="text">
                <string>STDOUT</string>
               </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
              <widget class="QCheckBox" name="showCerr_checkBox">
               <property name="text">
                <string>STDERR</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>

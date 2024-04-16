@@ -63,6 +63,10 @@ bool LoggerViewCore::parseFile()
         return false;
     }
 
+    d->m_sessions.clear();
+    d->m_currentSessionIndex = 0;
+    d->m_currentMessageIndex = 0;
+
     d->m_logFile.open(QIODevice::ReadOnly);
 
     constexpr int64_t bufferSize = 1024 * 1024;
@@ -154,7 +158,7 @@ std::shared_ptr<LogMessageStruct> LoggerViewCore::message()
 
 bool LoggerViewCore::setNextMessage()
 {
-    if (d->m_currentMessageIndex >= d->m_currentSessionLog->messages.size())
+    if ((d->m_currentMessageIndex + 1) >= d->m_currentSessionLog->messages.size())
         return {};
 
     d->m_currentMessageIndex++;
@@ -200,7 +204,7 @@ void LoggerViewCore::parseLine(const QString &lineData)
     currentLogMessage->timestamp = match.captured(0);
 //    qDebug() << "Timestamp:" << currentLogMessage->timestamp;
 
-    QRegularExpression filestampMatch("([\-\_\.A-Za-z0-9]+[/]{0,1}){1,} : [0-9]+");
+    QRegularExpression filestampMatch("([\\-\\_\\.A-Za-z0-9]+[/]{0,1}){1,} : [0-9]+");
     match = filestampMatch.match(lineData);
     if (!match.hasMatch())
         return;
@@ -213,12 +217,19 @@ void LoggerViewCore::parseLine(const QString &lineData)
     if (!match.hasMatch())
         return;
 
-    QString type = match.captured(0);
-    if (type.size() < 2)
-        return;
+    if (lineData.contains("STDOUT"))
+        currentLogMessage->type = LogType::LOG_TYPE_STDOUT;
+    else if (lineData.contains("STDERR"))
+        currentLogMessage->type = LogType::LOG_TYPE_STDERR;
+    else
+    {
+        QString type = match.captured(0);
+        if (type.size() < 2)
+            return;
 
-    type.remove(0, 1);
-    currentLogMessage->type = LogMessageStruct::typeFromString(type);
+        type.remove(0, 1);
+        currentLogMessage->type = LogMessageStruct::typeFromString(type);
+    }
 
     const QString wordRegExp("[:]{0,2}[A-Za-z0-9&*<>]+");
     const QString argRegExp = QString("(%1){1,}( %1){0,}(\\, ){0,1}").arg(wordRegExp);
@@ -271,6 +282,16 @@ QString LogMessageStruct::typeString(LogType t)
     case LogType::LOG_TYPE_FATAL:
 //        qDebug() << "Fatal!";
         return "FATAL";
+        break;
+
+    case LogType::LOG_TYPE_STDOUT:
+//        qDebug() << "STD out!";
+        return "STDOUT";
+        break;
+
+    case LogType::LOG_TYPE_STDERR:
+//        qDebug() << "STD err!";
+        return "STDERR";
         break;
 
     default:
