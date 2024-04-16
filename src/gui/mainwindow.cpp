@@ -133,4 +133,8 @@ void MainWindow::fillMessageList()
 
         currentMessage = m_loggerCore.message();
     }
+
+    ui->logs_tableView->resizeColumnsToContents();
+    auto header = ui->logs_tableView->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::Stretch);
 }

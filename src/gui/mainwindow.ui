@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>804</width>
+    <width>954</width>
     <height>555</height>
    </rect>
   </property>
@@ -247,7 +247,7 @@
      <widget class="QTableView" name="logs_tableView">
       <property name="minimumSize">
        <size>
-        <width>500</width>
+        <width>650</width>
         <height>0</height>
        </size>
       </property>
@@ -260,7 +260,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>804</width>
+     <width>954</width>
      <height>30</height>
     </rect>
    </property>
