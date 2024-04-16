@@ -8,7 +8,8 @@
 namespace Logging
 {
 
-struct LogMessagePeriodStruct
+// Storage for every launch log messages
+struct SessionLogStruct
 {
     QString date;
     QString time;
@@ -18,7 +19,7 @@ struct LogMessagePeriodStruct
 
 struct LoggerViewCore::LoggerViewCorePrivate
 {
-    LogMessagePeriodStruct m_currentLog;
+    SessionLogStruct m_currentSessionLog;
     size_t m_currentMessageIndex {0};
 
     QFile m_logFile;
@@ -70,12 +71,12 @@ bool LoggerViewCore::parseFile(const QString &filename)
 
 QString LoggerViewCore::date()
 {
-    return d->m_currentLog.date;
+    return d->m_currentSessionLog.date;
 }
 
 size_t LoggerViewCore::messageCount() const
 {
-    return d->m_currentLog.messages.size();
+    return d->m_currentSessionLog.messages.size();
 }
 
 size_t LoggerViewCore::currentMessageIndex() const
@@ -89,21 +90,21 @@ std::shared_ptr<LogMessageStruct> LoggerViewCore::prevMessage()
         return {};
 
     d->m_currentMessageIndex--;
-    return d->m_currentLog.messages[d->m_currentMessageIndex];
+    return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
 }
 
 std::shared_ptr<LogMessageStruct> LoggerViewCore::message()
 {
-    return d->m_currentLog.messages[d->m_currentMessageIndex];
+    return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
 }
 
 std::shared_ptr<LogMessageStruct> LoggerViewCore::nextMessage()
 {
-    if (d->m_currentMessageIndex >= d->m_currentLog.messages.size())
+    if (d->m_currentMessageIndex >= d->m_currentSessionLog.messages.size())
         return {};
 
     d->m_currentMessageIndex++;
-    return d->m_currentLog.messages[d->m_currentMessageIndex];
+    return d->m_currentSessionLog.messages[d->m_currentMessageIndex];
 }
 
 }

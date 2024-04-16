@@ -25,11 +25,10 @@ enum LogType
     LOG_TYPE_STDERR
 };
 
-
+// Storage for messages
 struct LogMessageStruct
 {
     QString text;
-
     LogType type;
 
     QString filename;

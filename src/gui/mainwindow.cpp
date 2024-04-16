@@ -44,4 +44,5 @@ void MainWindow::processFile()
 void MainWindow::setupSignals()
 {
     connect(ui->chooseLogFile_pushButton, &QPushButton::clicked, this, &MainWindow::processFile);
+    connect(ui->logFileName_lineEdit, &QLineEdit::returnPressed, this, &MainWindow::processFile);
 }
