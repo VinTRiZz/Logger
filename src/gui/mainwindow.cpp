@@ -44,7 +44,6 @@ void MainWindow::processFile()
     }
 
     qDebug() << "Parsing complete";
-    log("Parsing complete");
 
     fillSessionList();
 }
@@ -54,46 +53,53 @@ void MainWindow::acceptViewChanges()
     auto filterBuffer =  m_logTypeFilter;
     m_logTypeFilter.clear();
 
+    // Log type filters
     if (!ui->showDebug_checkBox->isChecked())    m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_DEBUG);
     if (!ui->showInfo_checkBox->isChecked())     m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_INFO);
     if (!ui->showWarning_checkBox->isChecked())  m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_WARNING);
     if (!ui->showCritical_checkBox->isChecked()) m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_CRITICAL);
     if (!ui->showFatal_checkBox->isChecked())    m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_FATAL);
 
+    // STD filters
     if (!ui->showCout_checkBox->isChecked())     m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_STDOUT);
     if (!ui->showCerr_checkBox->isChecked())     m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_STDERR);
 
+    // Unknown logging filter
     if (!ui->showUnknown_checkBox->isChecked())  m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_UNKNOWN);
 
     if (filterBuffer != m_logTypeFilter)
+    {
+        qDebug() << "Updated filter";
         fillMessageList();
+    }
 }
 
 void MainWindow::updateLogTableContents()
 {
     const QString choosenDate = ui->sessions_comboBox->currentText();
+
+    m_loggerCore.resetDate();
     QString dateText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
+
+    if (dateText == choosenDate)
+    {
+        qDebug() << "Found date:" << choosenDate;
+        fillMessageList();
+        return;
+    }
+
     while (m_loggerCore.setNextDate())
     {
         dateText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
 
         if (dateText == choosenDate)
         {
-            fillMessageList();
+            qDebug() << "Found date 2:" << choosenDate;
+            fillMessageList();;
             return;
         }
     }
-
-    while (m_loggerCore.setPrevDate())
-    {
-        dateText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
-
-        if (dateText == choosenDate)
-        {
-            fillMessageList();
-            return;
-        }
-    }
+    qDebug() << "Not found date:" << choosenDate;
 }
 
 void MainWindow::setupSignals()
@@ -112,15 +118,19 @@ void MainWindow::showStatus(const QString &statusText)
 
 void MainWindow::fillSessionList()
 {
+    // Clean from previous data
     m_pLoglistModel->clear();
     ui->sessions_comboBox->clear();
 
     if (m_loggerCore.logDateCount() < 1)
     {
         log("No sessions found in a file");
+        qDebug() << "No sessions found";
         return;
     }
 
+    // Add sessions loaded
+    m_loggerCore.resetDate();
     const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
     ui->sessions_comboBox->addItem(itemText);
 
@@ -129,7 +139,7 @@ void MainWindow::fillSessionList()
         const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
         ui->sessions_comboBox->addItem(itemText);
     }
-    log("Sessions loaded");
+    qDebug() << "Session adding complete";
 }
 
 void MainWindow::fillMessageList()
@@ -146,16 +156,18 @@ void MainWindow::fillMessageList()
 
     m_pLoglistModel->appendRow(columns);
 
+    m_loggerCore.resetMessageIndex();
     auto currentMessage = m_loggerCore.message();
     if (!currentMessage.use_count())
         return;
 
-    while (m_loggerCore.setPrevMessage()); // Reset to first one
-
     while (m_loggerCore.setNextMessage())
     {
         if (m_logTypeFilter.contains(currentMessage->type)) // Skip anything in filter
+        {
+            currentMessage = m_loggerCore.message();
             continue;
+        }
 
         columns.clear();
 
@@ -174,6 +186,4 @@ void MainWindow::fillMessageList()
     header->setSectionResizeMode(QHeaderView::Stretch);
 
     ui->logs_tableView->update();
-
-    log("Logs loaded");
 }

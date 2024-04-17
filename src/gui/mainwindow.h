@@ -35,7 +35,7 @@ private:
 
     Logging::LoggerViewCore m_loggerCore;
 
-    QVector<Logging::LogType> m_logTypeFilter;
+    QVector<Logging::LogType> m_logTypeFilter {Logging::LogType::LOG_TYPE_UNKNOWN};
 
     QStandardItemModel * m_pLoglistModel;
 

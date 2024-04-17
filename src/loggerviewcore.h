@@ -63,12 +63,14 @@ public:
     QString time() const;
 
     // Switch between program launches
+    void resetDate();
     bool setPrevDate();
     bool setNextDate();
     size_t logDateCount() const;
 
     // Message index work
     size_t messageCount() const;
+    void resetMessageIndex();
     size_t currentMessageIndex() const;
 
     // Iterate between messages. Unsafe (take care of indexes)

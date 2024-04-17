@@ -91,8 +91,8 @@ bool LoggerViewCore::parseFile()
         parseLine(dataBuffer);
     }
 
-    if (d->m_sessions.size())
-        d->m_currentSessionLog = d->m_sessions[0];
+    resetDate();
+    resetMessageIndex();
 
     LOGGER_CORE_LOG(QString("Parsed ") + QString::number(d->m_sessions.size()) + " session(s)");
 
@@ -113,6 +113,16 @@ QString LoggerViewCore::date() const
 QString LoggerViewCore::time() const
 {
     return d->m_currentSessionLog->time;
+}
+
+void LoggerViewCore::resetDate()
+{
+    d->m_currentMessageIndex = 0;
+    d->m_currentSessionIndex = 0;
+
+    if (!d->m_sessions.size())
+        return;
+    d->m_currentSessionLog = d->m_sessions[d->m_currentSessionIndex];
 }
 
 bool LoggerViewCore::setPrevDate()
@@ -148,6 +158,11 @@ size_t LoggerViewCore::logDateCount() const
 size_t LoggerViewCore::messageCount() const
 {
     return d->m_currentSessionLog->messages.size();
+}
+
+void LoggerViewCore::resetMessageIndex()
+{
+    d->m_currentMessageIndex = 0;
 }
 
 size_t LoggerViewCore::currentMessageIndex() const
