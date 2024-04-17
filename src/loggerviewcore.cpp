@@ -250,20 +250,26 @@ void LoggerViewCore::parseLine(const QString &lineData)
     match = functionMatch.match(lineData);
     if (!match.hasMatch())
     {
-        LOGGER_CORE_LOG(QString("No function here:") + lineData);
+        LOGGER_CORE_LOG(QString("Function read error:") + lineData);
         return;
     }
 
     currentLogMessage->functionstamp = match.captured(0);
 //    LOGGER_CORE_LOG(QString("Function is: ") + currentLogMessage->functionstamp);
 
-//    LOGGER_CORE_LOG(QString("Found log:") +
-//             + currentLogMessage->timestamp + " "
-//             + currentLogMessage->filestamp + " "
-//             + currentLogMessage->functionstamp + " "
-//             + " T:" + QString::number(currentLogMessage->type) + " "
-//             + currentLogMessage->text)
-//    ;
+
+    int endpos = match.capturedEnd(0);
+    currentLogMessage->text = lineData;
+    currentLogMessage->text.remove(0, endpos + 1);
+//    LOGGER_CORE_LOG(QString("Text is: ") + currentLogMessage->text);
+
+    LOGGER_CORE_LOG(QString("Found log:")
+             + currentLogMessage->timestamp + " "
+             + currentLogMessage->filestamp + " "
+             + currentLogMessage->functionstamp + " "
+             + " T:" + QString::number(currentLogMessage->type) + " "
+             + currentLogMessage->text)
+    ;
 
     d->m_currentSessionLog->messages.push_back(currentLogMessage);
 }

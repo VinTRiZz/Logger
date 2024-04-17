@@ -12,6 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->logs_tableView->horizontalHeader()->setHidden(true);
+    ui->logs_tableView->verticalHeader()->setHidden(true);
     ui->logs_tableView->setModel(m_pLoglistModel);
 
     m_loggerCore.setLogChannel([this](const QString& msg){ showStatus(msg); });
@@ -49,6 +51,7 @@ void MainWindow::processFile()
 
 void MainWindow::acceptViewChanges()
 {
+    auto filterBuffer =  m_logTypeFilter;
     m_logTypeFilter.clear();
 
     if (!ui->showDebug_checkBox->isChecked())    m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_DEBUG);
@@ -62,7 +65,8 @@ void MainWindow::acceptViewChanges()
 
     if (!ui->showUnknown_checkBox->isChecked())  m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_UNKNOWN);
 
-    fillMessageList();
+    if (filterBuffer != m_logTypeFilter)
+        fillMessageList();
 }
 
 void MainWindow::updateLogTableContents()
@@ -133,7 +137,6 @@ void MainWindow::fillMessageList()
     m_pLoglistModel->clear();
 
     // Setup header
-    QStandardItem* logRow = new QStandardItem("Test");
     QList<QStandardItem*> columns;
     columns.push_back(new QStandardItem("Timestamp"));
     columns.push_back(new QStandardItem("Log type"));
