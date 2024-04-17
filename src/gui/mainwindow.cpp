@@ -3,6 +3,8 @@
 
 #include <QDebug>
 
+#include <QFileDialog>
+
 #define log(what) showStatus(what)
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -68,10 +70,7 @@ void MainWindow::acceptViewChanges()
     if (!ui->showUnknown_checkBox->isChecked())  m_logTypeFilter.push_back(Logging::LogType::LOG_TYPE_UNKNOWN);
 
     if (filterBuffer != m_logTypeFilter)
-    {
-        qDebug() << "Updated filter";
         fillMessageList();
-    }
 }
 
 void MainWindow::updateLogTableContents()
@@ -83,7 +82,6 @@ void MainWindow::updateLogTableContents()
 
     if (dateText == choosenDate)
     {
-        qDebug() << "Found date:" << choosenDate;
         fillMessageList();
         return;
     }
@@ -94,12 +92,21 @@ void MainWindow::updateLogTableContents()
 
         if (dateText == choosenDate)
         {
-            qDebug() << "Found date 2:" << choosenDate;
             fillMessageList();;
             return;
         }
     }
-    qDebug() << "Not found date:" << choosenDate;
+}
+
+void MainWindow::chooseFileFromFilesystem()
+{
+    auto fileUrl = QFileDialog::getOpenFileUrl(this, "Aboba", QUrl("."), "*.txt Text file;; *.log Log journal file;; * Any other file");
+    auto filePath = fileUrl.toLocalFile();
+
+    if (!filePath.size())
+        return;
+
+    ui->logFileName_lineEdit->setText(filePath);
 }
 
 void MainWindow::setupSignals()
@@ -109,6 +116,8 @@ void MainWindow::setupSignals()
 
     connect(ui->acceptShowSettings_pushButton, &QPushButton::clicked, this, &MainWindow::acceptViewChanges);
     connect(ui->sessions_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::updateLogTableContents);
+
+    connect(ui->searchLogFile_pushButton, &QPushButton::clicked, this, &MainWindow::chooseFileFromFilesystem);
 }
 
 void MainWindow::showStatus(const QString &statusText)
@@ -139,7 +148,6 @@ void MainWindow::fillSessionList()
         const QString itemText = QString("%1 %2").arg(m_loggerCore.time(), m_loggerCore.date());
         ui->sessions_comboBox->addItem(itemText);
     }
-    qDebug() << "Session adding complete";
 }
 
 void MainWindow::fillMessageList()

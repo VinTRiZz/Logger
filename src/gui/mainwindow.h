@@ -30,10 +30,13 @@ public slots:
 
     void updateLogTableContents();
 
+    void chooseFileFromFilesystem();
+
 private:
     Ui::MainWindow *ui;
 
     Logging::LoggerViewCore m_loggerCore;
+    bool m_showAsFullPath {true};
 
     QVector<Logging::LogType> m_logTypeFilter {Logging::LogType::LOG_TYPE_UNKNOWN};
 
