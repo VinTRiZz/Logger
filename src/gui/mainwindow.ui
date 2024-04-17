@@ -36,7 +36,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>testlog.txt</string>
+          <string>testlog_3.txt</string>
          </property>
         </widget>
        </item>

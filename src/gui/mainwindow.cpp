@@ -200,6 +200,19 @@ void MainWindow::fillMessageList()
         currentMessage = m_loggerCore.message();
     }
 
+    if (!m_logTypeFilter.contains(currentMessage->type)) // Skip anything in filter
+    {
+        columns.clear();
+
+        createColumnItem(currentMessage->timestamp);
+        createColumnItem(Logging::LogMessageStruct::typeString(currentMessage->type));
+        createColumnItem(currentMessage->filestamp);
+        createColumnItem(currentMessage->functionstamp);
+        createColumnItem(currentMessage->text);
+
+        m_pLoglistModel->appendRow(columns);
+    }
+
     ui->logs_tableView->resizeColumnsToContents();
     auto header = ui->logs_tableView->horizontalHeader();
     header->setSectionResizeMode(QHeaderView::Stretch);

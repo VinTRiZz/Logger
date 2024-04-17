@@ -10,9 +10,9 @@
 #define LOGGER_CORE_LOG(what) \
 { \
     if (m_logger) \
-        { m_logger(what); } \
+        m_logger(what); \
     else \
-        { qDebug() << what; } \
+        qDebug() << what; \
 }
 
 namespace Logging
@@ -278,13 +278,13 @@ void LoggerViewCore::parseLine(const QString &lineData)
     currentLogMessage->text.remove(0, endpos + 1);
 //    LOGGER_CORE_LOG(QString("Text is: ") + currentLogMessage->text);
 
-    LOGGER_CORE_LOG(QString("Found log:")
-             + currentLogMessage->timestamp + " "
-             + currentLogMessage->filestamp + " "
-             + currentLogMessage->functionstamp + " "
-             + " T:" + QString::number(currentLogMessage->type) + " "
-             + currentLogMessage->text)
-    ;
+//    LOGGER_CORE_LOG(QString("Found log:")
+//             + currentLogMessage->timestamp + " "
+//             + currentLogMessage->filestamp + " "
+//             + currentLogMessage->functionstamp + " "
+//             + LogMessageStruct::typeString(currentLogMessage->type) + " "
+//             + currentLogMessage->text)
+//    ;
 
     d->m_currentSessionLog->messages.push_back(currentLogMessage);
 }
@@ -313,7 +313,6 @@ QString LogMessageStruct::typeString(LogType t)
         return "STDOUT";
 
     case LogType::LOG_TYPE_STDERR:
-//        LOGGER_CORE_LOG(QString("STD err!");
         return "STDERR";
 
     default:
@@ -327,27 +326,27 @@ LogType LogMessageStruct::typeFromString(const QString &t)
     {
     case 'D':
         return LogType::LOG_TYPE_DEBUG;
-        break;
 
     case 'I':
         return LogType::LOG_TYPE_INFO;
-        break;
 
     case 'W':
         return LogType::LOG_TYPE_WARNING;
-        break;
 
     case 'C':
         return LogType::LOG_TYPE_CRITICAL;
-        break;
 
     case 'F':
         return LogType::LOG_TYPE_FATAL;
-        break;
-
-    default:
-        return LogType::LOG_TYPE_UNKNOWN;
     }
+
+    if (t == "STDOUT")
+        return LogType::LOG_TYPE_STDOUT;
+
+    if (t == "STDERR")
+        return LogType::LOG_TYPE_STDERR;
+
+    return LogType::LOG_TYPE_UNKNOWN;
 }
 
 }

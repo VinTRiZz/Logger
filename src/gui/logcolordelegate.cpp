@@ -62,7 +62,7 @@ void LogColorDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         break;
 
     case Logging::LogType::LOG_TYPE_STDERR:
-        painterPen.setColor(QColor(200, 100, 100));
+        painterPen.setColor(QColor(200, 70, 70));
         break;
 
     case Logging::LogType::LOG_TYPE_UNKNOWN:

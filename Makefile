@@ -427,7 +427,8 @@ BUILD/main.o: src/main.cpp src/gui/mainwindow.h \
 		src/gui/logcolordelegate.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/main.o src/main.cpp
 
-BUILD/logcolordelegate.o: src/gui/logcolordelegate.cpp src/gui/logcolordelegate.h
+BUILD/logcolordelegate.o: src/gui/logcolordelegate.cpp src/gui/logcolordelegate.h \
+		src/loggerviewcore.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/logcolordelegate.o src/gui/logcolordelegate.cpp
 
 BUILD/mainwindow.o: src/gui/mainwindow.cpp src/gui/mainwindow.h \
