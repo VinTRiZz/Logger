@@ -10,6 +10,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     m_pLoglistModel {new QStandardItemModel(this)},
+    m_logColorDelegate {new LogColorDelegate(this)},
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -17,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->logs_tableView->horizontalHeader()->setHidden(true);
     ui->logs_tableView->verticalHeader()->setHidden(true);
     ui->logs_tableView->setModel(m_pLoglistModel);
+
+    ui->logs_tableView->setItemDelegate(m_logColorDelegate);
 
     m_loggerCore.setLogChannel([this](const QString& msg){ showStatus(msg); });
 
@@ -150,17 +153,24 @@ void MainWindow::fillSessionList()
     }
 }
 
+#define createColumnItem(itemText) \
+    tempItem = new QStandardItem(itemText);\
+    tempItem->setTextAlignment(Qt::AlignCenter); \
+    columns.push_back(tempItem)
+
 void MainWindow::fillMessageList()
 {
     m_pLoglistModel->clear();
 
     // Setup header
     QList<QStandardItem*> columns;
-    columns.push_back(new QStandardItem("Timestamp"));
-    columns.push_back(new QStandardItem("Log type"));
-    columns.push_back(new QStandardItem("File"));
-    columns.push_back(new QStandardItem("Function"));
-    columns.push_back(new QStandardItem("Text"));
+    QStandardItem* tempItem;
+
+    createColumnItem("Timestamp");
+    createColumnItem("Log type");
+    createColumnItem("File");
+    createColumnItem("Function");
+    createColumnItem("Text");
 
     m_pLoglistModel->appendRow(columns);
 
@@ -179,11 +189,12 @@ void MainWindow::fillMessageList()
 
         columns.clear();
 
-        columns.push_back(new QStandardItem(currentMessage->timestamp));
-        columns.push_back(new QStandardItem(Logging::LogMessageStruct::typeString(currentMessage->type)));
-        columns.push_back(new QStandardItem(currentMessage->filestamp));
-        columns.push_back(new QStandardItem(currentMessage->functionstamp));
-        columns.push_back(new QStandardItem(currentMessage->text));
+        createColumnItem(currentMessage->timestamp);
+        createColumnItem(Logging::LogMessageStruct::typeString(currentMessage->type));
+        createColumnItem(currentMessage->filestamp);
+        createColumnItem(currentMessage->functionstamp);
+        createColumnItem(currentMessage->text);
+
         m_pLoglistModel->appendRow(columns);
 
         currentMessage = m_loggerCore.message();

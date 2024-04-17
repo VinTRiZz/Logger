@@ -8,6 +8,7 @@
 #include <QStandardItemModel>
 
 #include "loggerviewcore.h"
+#include "logcolordelegate.h"
 
 #include <QVector>
 
@@ -33,14 +34,15 @@ public slots:
     void chooseFileFromFilesystem();
 
 private:
-    Ui::MainWindow *ui;
-
     Logging::LoggerViewCore m_loggerCore;
     bool m_showAsFullPath {true};
 
     QVector<Logging::LogType> m_logTypeFilter {Logging::LogType::LOG_TYPE_UNKNOWN};
 
-    QStandardItemModel * m_pLoglistModel;
+    QStandardItemModel* m_pLoglistModel;
+    LogColorDelegate* m_logColorDelegate;
+
+    Ui::MainWindow *ui;
 
     void setupSignals();
 

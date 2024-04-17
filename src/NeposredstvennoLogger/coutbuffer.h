@@ -25,7 +25,7 @@ private:
     QFile m_logFile;
     QString m_logBuffer;
     bool m_synchronized {false};
-    QString m_loggerName {"Undefined"};
+    QString m_loggerName {"UNKNOWN"};
 };
 
 }

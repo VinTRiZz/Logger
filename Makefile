@@ -52,10 +52,14 @@ OBJECTS_DIR   = BUILD/
 
 SOURCES       = src/loggerviewcore.cpp \
 		src/main.cpp \
-		src/gui/mainwindow.cpp BUILD/moc_mainwindow.cpp
+		src/gui/logcolordelegate.cpp \
+		src/gui/mainwindow.cpp BUILD/moc_logcolordelegate.cpp \
+		BUILD/moc_mainwindow.cpp
 OBJECTS       = BUILD/loggerviewcore.o \
 		BUILD/main.o \
+		BUILD/logcolordelegate.o \
 		BUILD/mainwindow.o \
+		BUILD/moc_logcolordelegate.o \
 		BUILD/moc_mainwindow.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \
@@ -140,8 +144,10 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/yacc.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/lex.prf \
 		LoggerView.pro src/loggerviewcore.h \
+		src/gui/logcolordelegate.h \
 		src/gui/mainwindow.h src/loggerviewcore.cpp \
 		src/main.cpp \
+		src/gui/logcolordelegate.cpp \
 		src/gui/mainwindow.cpp
 QMAKE_TARGET  = LoggerView
 DESTDIR       = BIN/
@@ -343,8 +349,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents src/loggerviewcore.h src/gui/mainwindow.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/loggerviewcore.cpp src/main.cpp src/gui/mainwindow.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents src/loggerviewcore.h src/gui/logcolordelegate.h src/gui/mainwindow.h $(DISTDIR)/
+	$(COPY_FILE) --parents src/loggerviewcore.cpp src/main.cpp src/gui/logcolordelegate.cpp src/gui/mainwindow.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents src/gui/mainwindow.ui $(DISTDIR)/
 
 
@@ -377,10 +383,16 @@ compiler_moc_predefs_clean:
 BUILD/moc_predefs.h: /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 	g++ -pipe -g -Wall -W -dM -E -o BUILD/moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: BUILD/moc_mainwindow.cpp
+compiler_moc_header_make_all: BUILD/moc_logcolordelegate.cpp BUILD/moc_mainwindow.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) BUILD/moc_mainwindow.cpp
+	-$(DEL_FILE) BUILD/moc_logcolordelegate.cpp BUILD/moc_mainwindow.cpp
+BUILD/moc_logcolordelegate.cpp: src/gui/logcolordelegate.h \
+		BUILD/moc_predefs.h \
+		/usr/lib/qt5/bin/moc
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/lazarev_as/Projects/Qt_afterMoveup/LoggerView/BUILD/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/lazarev_as/Projects/Qt_afterMoveup/LoggerView -I/home/lazarev_as/Projects/Qt_afterMoveup/LoggerView/src -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/6 -I/usr/include/x86_64-linux-gnu/c++/6 -I/usr/include/c++/6/backward -I/usr/lib/gcc/x86_64-linux-gnu/6/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/6/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include src/gui/logcolordelegate.h -o BUILD/moc_logcolordelegate.cpp
+
 BUILD/moc_mainwindow.cpp: src/loggerviewcore.h \
+		src/gui/logcolordelegate.h \
 		src/gui/mainwindow.h \
 		BUILD/moc_predefs.h \
 		/usr/lib/qt5/bin/moc
@@ -411,13 +423,21 @@ BUILD/loggerviewcore.o: src/loggerviewcore.cpp src/loggerviewcore.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/loggerviewcore.o src/loggerviewcore.cpp
 
 BUILD/main.o: src/main.cpp src/gui/mainwindow.h \
-		src/loggerviewcore.h
+		src/loggerviewcore.h \
+		src/gui/logcolordelegate.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/main.o src/main.cpp
+
+BUILD/logcolordelegate.o: src/gui/logcolordelegate.cpp src/gui/logcolordelegate.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/logcolordelegate.o src/gui/logcolordelegate.cpp
 
 BUILD/mainwindow.o: src/gui/mainwindow.cpp src/gui/mainwindow.h \
 		src/loggerviewcore.h \
+		src/gui/logcolordelegate.h \
 		BUILD/ui_mainwindow.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/mainwindow.o src/gui/mainwindow.cpp
+
+BUILD/moc_logcolordelegate.o: BUILD/moc_logcolordelegate.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/moc_logcolordelegate.o BUILD/moc_logcolordelegate.cpp
 
 BUILD/moc_mainwindow.o: BUILD/moc_mainwindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o BUILD/moc_mainwindow.o BUILD/moc_mainwindow.cpp
